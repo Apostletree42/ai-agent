@@ -1,8 +1,9 @@
 import os
 import subprocess
+import shlex
 
 
-def run_python_file(working_directory, file_path):
+def run_python_file(working_directory, file_path, arguments=None):
     try:
         workpath = os.path.abspath(working_directory)
         direc = os.path.join(workpath, file_path) if file_path else workpath
@@ -13,9 +14,16 @@ def run_python_file(working_directory, file_path):
             return f'Error: File "{file_path}" not found.'
         if not abs_path.endswith('.py'):
             return f'Error: "{file_path}" is not a Python file.'
+
+        cmd = ['python3', abs_path]
+        if arguments:
+            if type(arguments) == str:
+                cmd.extend(arguments.split())
+            else:
+                cmd.extend(arguments)
         
         res = subprocess.run(
-            ['python3', abs_path],
+            cmd,
             capture_output=True,
             text=True,
             timeout=30,

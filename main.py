@@ -91,7 +91,8 @@ def create_function_schemas():
         ]
     )
 
-def handle_function_calls(function_calls, verbose=False):
+def handle_function_calls(function_calls, messages, verbose=False):
+    function_responses = []
     for function_call_part in function_calls:
         function_call_result = call_function(function_call_part, verbose=verbose)
         
@@ -100,6 +101,10 @@ def handle_function_calls(function_calls, verbose=False):
         
         if verbose:
             print(f"-> {function_call_result.parts[0].function_response.response}")
+
+        function_responses.append(function_call_result.parts[0])
+
+    messages.append(genai.types.Content(role="tool", parts=function_responses))
 
 def print_usage_stats(prompt, response, verbose=False):
     if verbose:
@@ -113,20 +118,32 @@ def main():
     available_functions = create_function_schemas()
     client = genai.Client(api_key=API_KEY)
 
-    response = client.models.generate_content(
-        model=MODEL_NAME,
-        contents=prompt,
-        config=genai.types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT,
-            tools=[available_functions],
+    messages = []
+    messages.append(genai.types.Content(
+        role="user",
+        parts=[genai.types.Part(text=prompt)]
+    ))
+    
+    for i in range(20):
+        response = client.models.generate_content(
+            model=MODEL_NAME,
+            contents=messages,
+            config=genai.types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT,
+                tools=[available_functions],
+            )
         )
-    )
-    
-    if response.function_calls:
-        handle_function_calls(response.function_calls, verbose)
-    else:
-        print(response.text)
-    
+
+        if response.candidates:
+            for candidate in response.candidates:
+                messages.append(candidate.content)
+        
+        if response.function_calls:
+            handle_function_calls(response.function_calls, messages, verbose)
+        else:
+            print(response.text)
+            break
+
     print_usage_stats(prompt, response, verbose)
 
 if __name__ == "__main__":
