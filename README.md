@@ -35,5 +35,5 @@ A simple AI agent built with Google's Gemini API that can interact with files an
 Example:
 For this command, modify `pkg/calculator.py` and change the precedence of the + operator to 3.
 ```bash
-python main.py "fix the bug in the calculator: 3 + 7 * 2 shouldn't be
+python main.py "fix the bug in the calculator: 3 + 7 * 2 shouldn't be 20"
 ```
